@@ -3,7 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import 'package:dynamic_list_view/data_provider.dart';
+import 'package:flutter_dynamic_list_view/data_provider.dart';
 
 class ExampleItem extends Item {
   final String _id;
@@ -26,15 +26,12 @@ class ExampleData extends ListData {
 class ExampleDataProvider extends DataProvider {
   static const int total = 1000;
   static const int _pageSize = 100;
-  Item current = ExampleItem(id: "${(total / 2).toInt()}");
+  Item current = ExampleItem(id: "${total ~/ 2}");
   @override
   Future<Data> fetch() async {
-    if (current != null) {
-      Data data = await fetchPrevious(current!);
-      data.insert((await fetchNext(current!)).all(), CrudHint.tail);
-      return data;
-    }
-    return fetchOldest();
+    Data data = await fetchPrevious(current);
+    data.insert((await fetchNext(current)).all(), CrudHint.tail);
+    return data;
   }
 
   Future<Data> fetchLatest() async {

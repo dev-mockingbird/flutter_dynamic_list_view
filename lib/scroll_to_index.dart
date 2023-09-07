@@ -3,6 +3,8 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
+library flutter_dynamic_list_view;
+
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/rendering.dart';

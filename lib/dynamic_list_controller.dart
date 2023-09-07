@@ -3,9 +3,9 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-library dynamic_list_view;
+library flutter_dynamic_list_view;
 
-import 'package:dynamic_list_view/scroll_to_index.dart';
+import 'package:flutter_dynamic_list_view/scroll_to_index.dart';
 import 'package:flutter/material.dart';
 import './data_provider.dart';
 import './scroll_judge.dart';

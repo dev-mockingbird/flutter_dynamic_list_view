@@ -3,7 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-library dynamic_list_view;
+library flutter_dynamic_list_view;
 
 abstract class Item {
   String get id;

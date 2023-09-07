@@ -1,8 +1,8 @@
-library dynamic_list_view;
+library flutter_dynamic_list_view;
 
-import 'package:dynamic_list_view/data_provider.dart';
-import 'package:dynamic_list_view/dynamic_list_controller.dart';
-import 'package:dynamic_list_view/scroll_to_index.dart';
+import 'package:flutter_dynamic_list_view/data_provider.dart';
+import 'package:flutter_dynamic_list_view/dynamic_list_controller.dart';
+import 'package:flutter_dynamic_list_view/scroll_to_index.dart';
 import 'package:flutter/material.dart';
 
 typedef ItemsBuilder = List<Widget> Function(

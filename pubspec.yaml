@@ -1,7 +1,7 @@
-name: dynamic_list_view
-description: A new Flutter package project.
+name: flutter_dynamic_list_view
+description: A dynamic list view which support preload data when scrolling.
 version: 0.0.1
-homepage:
+homepage: https://github.com/dev-mockingbird/flutter_dynamic_list_view
 
 environment:
   sdk: '>=3.1.0 <4.0.0'
