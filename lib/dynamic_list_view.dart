@@ -1,5 +1,6 @@
 library flutter_dynamic_list_view;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter_dynamic_list_view/data_provider.dart';
 import 'package:flutter_dynamic_list_view/dynamic_list_controller.dart';
 import 'package:flutter_dynamic_list_view/scroll_to_index.dart';
@@ -11,8 +12,21 @@ class DynamicListView extends StatefulWidget {
   final DynamicListController controller;
   final AutoScrollController? scrollController;
   final ItemsBuilder itemsBuilder;
-  final Widget? header;
+  final SliverAppBar? header;
   final Widget? noContent;
+  final double? cacheExtent;
+
+  final Axis? scrollDirection;
+  final bool? reverse;
+  final bool? primary;
+  final ScrollBehavior? scrollBehavior;
+  final bool? shrinkWrap;
+
+  final int? semanticChildCount;
+  final DragStartBehavior? dragStartBehavior;
+  final ScrollViewKeyboardDismissBehavior? keyboardDismissBehavior;
+  final String? restorationId;
+  final Clip? clipBehavior;
 
   const DynamicListView({
     super.key,
@@ -20,7 +34,18 @@ class DynamicListView extends StatefulWidget {
     required this.controller,
     this.scrollController,
     this.header,
+    this.cacheExtent,
     this.noContent,
+    this.scrollDirection,
+    this.reverse,
+    this.primary,
+    this.scrollBehavior,
+    this.shrinkWrap,
+    this.semanticChildCount,
+    this.dragStartBehavior,
+    this.keyboardDismissBehavior,
+    this.restorationId,
+    this.clipBehavior,
   });
 
   @override
@@ -35,9 +60,7 @@ class _DynamicListViewState extends State<DynamicListView> {
   void initState() {
     _scrollController = widget.scrollController ?? AutoScrollController();
     widget.controller.installScrollListener(_scrollController);
-    widget.controller.addDataListener((type, data) {
-      _updateUI();
-    });
+    widget.controller.items.addListener(_updateUI);
     super.initState();
   }
 
@@ -64,7 +87,7 @@ class _DynamicListViewState extends State<DynamicListView> {
           index: DynamicListController.topIndex,
           child: SizedBox(height: widget.controller.topHeight))
     ];
-    List<Item> data = widget.controller.items;
+    List<Item> data = widget.controller.items.value?.all() ?? [];
     if (data.isEmpty && widget.noContent != null) {
       children.add(SliverToBoxAdapter(child: widget.noContent));
     }
@@ -83,7 +106,18 @@ class _DynamicListViewState extends State<DynamicListView> {
       child: SizedBox(height: widget.controller.bottomHeight),
     ));
     return CustomScrollView(
-      cacheExtent: 100,
+      cacheExtent: widget.cacheExtent,
+      scrollDirection: widget.scrollDirection ?? Axis.vertical,
+      reverse: widget.reverse ?? false,
+      primary: widget.primary,
+      scrollBehavior: widget.scrollBehavior,
+      shrinkWrap: widget.shrinkWrap ?? false,
+      semanticChildCount: widget.semanticChildCount,
+      dragStartBehavior: widget.dragStartBehavior ?? DragStartBehavior.start,
+      keyboardDismissBehavior: widget.keyboardDismissBehavior ??
+          ScrollViewKeyboardDismissBehavior.manual,
+      restorationId: widget.restorationId,
+      clipBehavior: widget.clipBehavior ?? Clip.hardEdge,
       center: _centerKey,
       controller: _scrollController,
       slivers: children,

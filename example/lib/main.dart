@@ -30,15 +30,6 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -54,9 +45,14 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     controller = DynamicListController<ExampleItem>(
         provider: ExampleDataProvider(), scrollJudge: DefaultScrollJudge());
-    controller.addLoadingListener((type, loading) {
+    controller.loadingNext.addListener(() {
       setState(() {
-        _loading = loading;
+        _loading = controller.loadingNext.value;
+      });
+    });
+    controller.loadingPrevious.addListener(() {
+      setState(() {
+        _loading = controller.loadingPrevious.value;
       });
     });
     super.initState();
@@ -77,8 +73,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   _randScroll() {
-    int index = Random().nextInt(controller.items.length);
-    Item item = controller.items[index];
+    var all = controller.items.value?.all() ?? [];
+    int index = Random().nextInt(all.length);
+    Item item = all[index];
     print("index: $index, item: ${item.id}");
     controller.scrollToItem(
       _scrollController,
@@ -90,22 +87,27 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text("TEST"),
-          actions: [
-            TextButton(onPressed: _randScroll, child: const Text("TO RAND")),
-            TextButton(onPressed: _scrollToTop, child: const Text("TO TOP")),
-            TextButton(
-                onPressed: _scrollToBottom, child: const Text("TO BOTTOM")),
-          ],
-          elevation: 8,
-          bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(2),
-              child: SizedBox(
-                  height: 2,
-                  child: _loading ? const LinearProgressIndicator() : null)),
-        ),
         body: DynamicListView(
+            header: SliverAppBar(
+              title: Text(widget.title),
+              actions: [
+                TextButton(
+                    onPressed: _randScroll, child: const Text("TO RAND")),
+                TextButton(
+                    onPressed: _scrollToTop, child: const Text("TO TOP")),
+                TextButton(
+                    onPressed: _scrollToBottom, child: const Text("TO BOTTOM")),
+              ],
+              elevation: 8,
+              pinned: true,
+              floating: true,
+              bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(2),
+                  child: SizedBox(
+                      height: 2,
+                      child:
+                          _loading ? const LinearProgressIndicator() : null)),
+            ),
             scrollController: _scrollController,
             itemsBuilder: (List<Item> data) {
               List<Widget> children = [];

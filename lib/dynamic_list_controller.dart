@@ -10,12 +10,21 @@ import 'package:flutter/material.dart';
 import './data_provider.dart';
 import './scroll_judge.dart';
 
-enum LoadingType { previous, next }
+enum FetchType { previous, next, unknown }
 
-enum DataChangeType { previous, next }
+class ValueChangeNotifier<T> extends ChangeNotifier {
+  ValueChangeNotifier(T val) : _value = val;
 
-typedef LoadingListener = Function(LoadingType type, bool loading);
-typedef DataChangeListener = Function(DataChangeType type, Data data);
+  T _value;
+  set value(T value) {
+    _value = value;
+    notifyListeners();
+  }
+
+  T get value {
+    return _value;
+  }
+}
 
 class DynamicListController<T extends Item> {
   static const int topIndex = 10000000;
@@ -24,16 +33,20 @@ class DynamicListController<T extends Item> {
   final double bottomHeight;
   final DataProvider<T> provider;
   final ScrollJudge scrollJudge;
-  final List<LoadingListener> _loadingListeners = [];
-  final List<DataChangeListener> _dataListeners = [];
 
-  Data<T>? _items;
   Data<T>? _cachedItems;
 
-  bool noMoreNext = false;
-  bool noMorePrevious = false;
-  bool _loadingNext = false;
-  bool _loadingPrevious = false;
+  final ValueChangeNotifier<Data<T>?> _items =
+      ValueChangeNotifier<Data<T>?>(null);
+  final ValueChangeNotifier<bool> _noMoreNext =
+      ValueChangeNotifier<bool>(false);
+  final ValueChangeNotifier<bool> _noMorePrevious =
+      ValueChangeNotifier<bool>(false);
+  final ValueChangeNotifier<bool> _loadingNext =
+      ValueChangeNotifier<bool>(false);
+  final ValueChangeNotifier<bool> _loadingPrevious =
+      ValueChangeNotifier<bool>(false);
+  FetchType lastLoadingType = FetchType.unknown;
 
   DynamicListController({
     required this.provider,
@@ -41,13 +54,30 @@ class DynamicListController<T extends Item> {
     this.topHeight = 0,
     this.bottomHeight = 0,
     Data<T>? items,
-  }) : _items = items {
-    if (_items == null) {
-      provider.fetch().then((value) {
-        _items = value;
-        _notifyDataChange(DataChangeType.next);
-      });
+  }) {
+    if (items != null) {
+      _items.value = items;
+      return;
     }
+    provider.fetch().then((value) {
+      _items.value = value;
+    });
+  }
+
+  ValueChangeNotifier<bool> get loadingNext {
+    return _loadingNext;
+  }
+
+  ValueChangeNotifier<bool> get loadingPrevious {
+    return _loadingPrevious;
+  }
+
+  ValueChangeNotifier<bool> get noMoreNext {
+    return _noMoreNext;
+  }
+
+  ValueChangeNotifier<bool> get noMorePrevious {
+    return _noMorePrevious;
   }
 
   scrollToTop(AutoScrollController scrollController, {Duration? duration}) {
@@ -63,10 +93,11 @@ class DynamicListController<T extends Item> {
   scrollToItem(AutoScrollController scrollController, Item item,
       {Duration? duration,
       AutoScrollPosition preferPosition = AutoScrollPosition.middle}) {
-    if (_items == null) {
+    Data<T>? items = _items.value;
+    if (items == null) {
       return;
     }
-    int index = _items!.indexOf(item);
+    int index = items.indexOf(item);
     double offset = 0;
     if (preferPosition == AutoScrollPosition.begin) {
       offset -= topHeight;
@@ -81,32 +112,20 @@ class DynamicListController<T extends Item> {
     }
   }
 
-  List<T> get items {
-    if (_items == null) {
-      return [];
-    }
-    return _items!.all();
+  ValueChangeNotifier<Data<T>?> get items {
+    return _items;
   }
 
   insert(List<T> items, CrudHint hint) {
-    if (_items == null) {
-      return;
-    }
-    _items!.insert(items, hint);
+    _items.value?.insert(items, hint);
   }
 
   remove(T item) {
-    if (_items == null) {
-      return;
-    }
-    _items!.remove(item);
+    _items.value?.remove(item);
   }
 
   update(T item) {
-    if (_items == null) {
-      return;
-    }
-    _items!.update(item);
+    _items.value?.update(item);
   }
 
   installScrollListener(ScrollController controller) {
@@ -126,68 +145,37 @@ class DynamicListController<T extends Item> {
     });
   }
 
-  addLoadingListener(LoadingListener listener) {
-    _loadingListeners.add(listener);
-  }
-
-  addDataListener(DataChangeListener listener) {
-    _dataListeners.add(listener);
-  }
-
-  goto(Item item) {}
-
-  gotoOldest() {}
-
-  gotoLatest() {}
-
   _cachePreviousPage() async {
-    if (noMorePrevious ||
-        _loadingPrevious ||
+    if (_noMorePrevious.value ||
+        _loadingPrevious.value ||
         _cachedItems != null ||
-        _items == null ||
-        _items!.length() == 0) {
+        _items.value == null ||
+        _items.value!.length() == 0) {
       return;
     }
-    _changeLoading(LoadingType.previous, true);
-    _cachedItems = await provider.fetchPrevious(_items!.at(0)!);
+    _loadingPrevious.value = true;
+    _cachedItems = await provider.fetchPrevious(_items.value!.at(0)!);
     if (_cachedItems!.length() < provider.pageSize) {
-      noMorePrevious = true;
+      _noMorePrevious.value = true;
     }
-    _changeLoading(LoadingType.previous, false);
+    _loadingPrevious.value = false;
   }
 
   _cacheNextPage() async {
-    if (noMoreNext ||
-        _loadingNext ||
+    if (_noMoreNext.value ||
+        _loadingNext.value ||
         _cachedItems != null ||
-        _items == null ||
-        _items!.length() == 0) {
+        _items.value == null ||
+        _items.value!.length() == 0) {
       return;
     }
-    _changeLoading(LoadingType.next, true);
-    _cachedItems = await provider.fetchNext(_items!.at(_items!.length() - 1)!);
+    _loadingNext.value = true;
+    _cachedItems =
+        await provider.fetchNext(_items.value!.at(_items.value!.length() - 1)!);
     if (_cachedItems!.length() < provider.pageSize) {
-      noMoreNext = true;
+      _noMoreNext.value = true;
     }
-    _changeLoading(LoadingType.next, false);
-  }
-
-  _changeLoading(LoadingType type, bool loading) {
-    switch (type) {
-      case LoadingType.next:
-        _loadingNext = loading;
-      case LoadingType.previous:
-        _loadingPrevious = loading;
-    }
-    for (var listener in _loadingListeners) {
-      listener(type, loading);
-    }
-  }
-
-  _notifyDataChange(DataChangeType type) {
-    for (var listener in _dataListeners) {
-      listener(type, _items!);
-    }
+    _loadingNext.value = false;
   }
 
   _applyPreviousPageData() async {
@@ -197,9 +185,8 @@ class DynamicListController<T extends Item> {
     if (_cachedItems == null) {
       return;
     }
-    _items!.insert(_cachedItems!.all(), CrudHint.head);
+    _items.value?.insert(_cachedItems!.all(), CrudHint.head);
     _cachedItems = null;
-    _notifyDataChange(DataChangeType.previous);
   }
 
   _applyNextPageData() async {
@@ -209,8 +196,7 @@ class DynamicListController<T extends Item> {
     if (_cachedItems == null) {
       return;
     }
-    _items!.insert(_cachedItems!.all(), CrudHint.tail);
+    _items.value?.insert(_cachedItems!.all(), CrudHint.tail);
     _cachedItems = null;
-    _notifyDataChange(DataChangeType.next);
   }
 }
