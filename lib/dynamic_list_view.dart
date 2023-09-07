@@ -5,8 +5,7 @@ import 'package:flutter_dynamic_list_view/dynamic_list_controller.dart';
 import 'package:flutter_dynamic_list_view/scroll_to_index.dart';
 import 'package:flutter/material.dart';
 
-typedef ItemsBuilder = List<Widget> Function(
-    List<Item> data, Map<String, GlobalKey> keys);
+typedef ItemsBuilder<T extends Item> = List<Widget> Function(List<T> data);
 
 class DynamicListView extends StatefulWidget {
   final DynamicListController controller;
@@ -30,8 +29,7 @@ class DynamicListView extends StatefulWidget {
 
 class _DynamicListViewState extends State<DynamicListView> {
   late AutoScrollController _scrollController;
-  final Map<String, GlobalKey> _msgKeys = {};
-  Key? _centerKey;
+  final GlobalKey _centerKey = GlobalKey();
 
   @override
   void initState() {
@@ -70,14 +68,15 @@ class _DynamicListViewState extends State<DynamicListView> {
     if (data.isEmpty && widget.noContent != null) {
       children.add(SliverToBoxAdapter(child: widget.noContent));
     }
-    _msgKeys.clear();
-    for (var item in data) {
-      var key = GlobalKey();
-      _msgKeys[item.id] = key;
-    }
-    List<Widget> items = widget.itemsBuilder(data, _msgKeys);
+    List<Widget> items = widget.itemsBuilder(data);
     if (items.isNotEmpty) {
-      _centerKey = items[items.length ~/ 2].key;
+      items.insert(
+          items.length ~/ 2,
+          ItemWrap(
+              scrollController: widget.scrollController,
+              index: 100000000,
+              child: Container(),
+              key: _centerKey));
     }
     children.addAll(items);
     children.add(ItemWrap(

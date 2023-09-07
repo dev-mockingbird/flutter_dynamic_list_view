@@ -16,31 +16,25 @@ class ExampleItem extends Item {
   }
 }
 
-class ExampleData extends ListData {
-  @override
-  int get maintainSize {
-    return 20;
-  }
-}
+class ExampleData extends ListData<ExampleItem> {}
 
-class ExampleDataProvider extends DataProvider {
+class ExampleDataProvider extends DataProvider<ExampleItem> {
   static const int total = 1000;
   static const int _pageSize = 100;
   Item current = ExampleItem(id: "${total ~/ 2}");
   @override
-  Future<Data> fetch() async {
-    Data data = await fetchPrevious(current);
+  Future<ExampleData> fetch() async {
+    ExampleData data = await fetchPrevious(current);
     data.insert((await fetchNext(current)).all(), CrudHint.tail);
     return data;
   }
 
-  Future<Data> fetchLatest() async {
+  Future<ExampleData> fetchLatest() async {
     return _fetch(total - pageSize);
   }
 
   @override
-  Future<Data> fetchNext(Item lastItem) async {
-    print(lastItem.id);
+  Future<ExampleData> fetchNext(Item lastItem) async {
     return _fetch(int.parse(lastItem.id));
   }
 
@@ -49,13 +43,13 @@ class ExampleDataProvider extends DataProvider {
   }
 
   @override
-  Future<Data> fetchPrevious(Item firstItem) {
+  Future<ExampleData> fetchPrevious(Item firstItem) {
     return _fetch(int.parse(firstItem.id) - pageSize);
   }
 
-  Future<Data> _fetch(int start) async {
+  Future<ExampleData> _fetch(int start) async {
     await Future.delayed(const Duration(seconds: 1));
-    Data data = ExampleData();
+    ExampleData data = ExampleData();
     List<ExampleItem> items = [];
     int end = start + pageSize;
     if (end > total) {

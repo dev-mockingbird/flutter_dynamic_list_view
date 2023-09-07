@@ -62,13 +62,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late DynamicListController controller;
+  late DynamicListController<ExampleItem> controller;
   bool _loading = false;
-  AutoScrollController _scrollController = AutoScrollController();
+  final AutoScrollController _scrollController = AutoScrollController();
 
   @override
   void initState() {
-    controller = DynamicListController(
+    controller = DynamicListController<ExampleItem>(
         provider: ExampleDataProvider(), scrollJudge: DefaultScrollJudge());
     controller.addLoadingListener((type, loading) {
       setState(() {
@@ -123,11 +123,10 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         body: DynamicListView(
             scrollController: _scrollController,
-            itemsBuilder: (List<Item> data, Map<String, GlobalKey> keys) {
+            itemsBuilder: (List<Item> data) {
               List<Widget> children = [];
               for (var i = 0; i < data.length; i++) {
                 children.add(ItemWrap(
-                    key: keys[data[i].id],
                     scrollController: _scrollController,
                     index: i,
                     child: Container(

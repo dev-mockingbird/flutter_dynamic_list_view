@@ -5,7 +5,7 @@
 
 library flutter_dynamic_list_view;
 
-import 'package:flutter_dynamic_list_view/scroll_to_index.dart';
+import './scroll_to_index.dart';
 import 'package:flutter/material.dart';
 import './data_provider.dart';
 import './scroll_judge.dart';
@@ -17,18 +17,18 @@ enum DataChangeType { previous, next }
 typedef LoadingListener = Function(LoadingType type, bool loading);
 typedef DataChangeListener = Function(DataChangeType type, Data data);
 
-class DynamicListController<T> {
+class DynamicListController<T extends Item> {
   static const int topIndex = 10000000;
   static const int bottomIndex = 10000001;
   final double topHeight;
   final double bottomHeight;
-  final DataProvider provider;
+  final DataProvider<T> provider;
   final ScrollJudge scrollJudge;
   final List<LoadingListener> _loadingListeners = [];
   final List<DataChangeListener> _dataListeners = [];
 
-  Data? _items;
-  Data? _cachedItems;
+  Data<T>? _items;
+  Data<T>? _cachedItems;
 
   bool noMoreNext = false;
   bool noMorePrevious = false;
@@ -40,7 +40,7 @@ class DynamicListController<T> {
     required this.scrollJudge,
     this.topHeight = 0,
     this.bottomHeight = 0,
-    Data? items,
+    Data<T>? items,
   }) : _items = items {
     if (_items == null) {
       provider.fetch().then((value) {
@@ -81,11 +81,32 @@ class DynamicListController<T> {
     }
   }
 
-  List<Item> get items {
+  List<T> get items {
     if (_items == null) {
       return [];
     }
     return _items!.all();
+  }
+
+  insert(List<T> items, CrudHint hint) {
+    if (_items == null) {
+      return;
+    }
+    _items!.insert(items, hint);
+  }
+
+  remove(T item) {
+    if (_items == null) {
+      return;
+    }
+    _items!.remove(item);
+  }
+
+  update(T item) {
+    if (_items == null) {
+      return;
+    }
+    _items!.update(item);
   }
 
   installScrollListener(ScrollController controller) {

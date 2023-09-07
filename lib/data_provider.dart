@@ -9,30 +9,31 @@ abstract class Item {
   String get id;
 }
 
-abstract class DataProvider {
-  Future<Data> fetchPrevious(Item firstItem);
-  Future<Data> fetchNext(Item firstItem);
-  Future<Data> fetch();
+abstract class DataProvider<T extends Item> {
+  Future<Data<T>> fetchPrevious(Item firstItem);
+  Future<Data<T>> fetchNext(Item lastItem);
+  Future<Data<T>> fetch();
   int get pageSize;
 }
 
 enum CrudHint { head, tail }
 
-abstract class Data {
-  insert(List<Item> data, CrudHint insertHint);
-  remove(int size, CrudHint removeHint);
-  List<Item> all();
-  Item? at(int idx);
+abstract class Data<T extends Item> {
+  insert(List<T> data, CrudHint insertHint);
+  removeAt(int index);
+  remove(T item);
+  update(T item);
+  List<T> all();
+  T? at(int idx);
   int indexOf(Item item);
   int length();
-  int get maintainSize;
 }
 
-abstract class ListData extends Data {
-  List<Item> _items = [];
+abstract class ListData<T extends Item> extends Data<T> {
+  List<T> _items = [];
 
   @override
-  insert(List<Item> data, CrudHint insertHint) {
+  insert(List<T> data, CrudHint insertHint) {
     switch (insertHint) {
       case CrudHint.head:
         for (var item in _items) {
@@ -66,23 +67,33 @@ abstract class ListData extends Data {
   }
 
   @override
-  remove(int size, CrudHint removeHint) {
-    switch (removeHint) {
-      case CrudHint.head:
-        _items = _items.sublist(size);
-        break;
-      case CrudHint.tail:
-        _items = _items.sublist(0, _items.length - size);
+  removeAt(int index) {
+    _items.removeAt(index);
+  }
+
+  @override
+  update(T item) {
+    int index = indexOf(item);
+    if (index > -1) {
+      _items[index] = item;
     }
   }
 
   @override
-  List<Item> all() {
+  remove(T item) {
+    int index = indexOf(item);
+    if (index > -1) {
+      removeAt(index);
+    }
+  }
+
+  @override
+  List<T> all() {
     return _items;
   }
 
   @override
-  Item? at(int idx) {
+  T? at(int idx) {
     if (idx > _items.length || idx < 0) {
       return null;
     }
@@ -103,7 +114,4 @@ abstract class ListData extends Data {
     }
     return -1;
   }
-
-  @override
-  int get maintainSize;
 }
