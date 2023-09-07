@@ -69,15 +69,13 @@ class _DynamicListViewState extends State<DynamicListView> {
       children.add(SliverToBoxAdapter(child: widget.noContent));
     }
     List<Widget> items = widget.itemsBuilder(data);
-    if (items.isNotEmpty) {
-      items.insert(
-          items.length ~/ 2,
-          ItemWrap(
-              scrollController: widget.scrollController,
-              index: 100000000,
-              child: Container(),
-              key: _centerKey));
-    }
+    items.insert(
+        items.length ~/ 2,
+        ItemWrap(
+            scrollController: widget.scrollController,
+            index: 100000000,
+            child: Container(),
+            key: _centerKey));
     children.addAll(items);
     children.add(ItemWrap(
       scrollController: _scrollController,
