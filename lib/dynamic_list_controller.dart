@@ -5,6 +5,8 @@
 
 library flutter_dynamic_list_view;
 
+import 'package:flutter/foundation.dart';
+
 import './scroll_to_index.dart';
 import 'package:flutter/material.dart';
 import './data_provider.dart';
@@ -34,7 +36,8 @@ class DynamicListController<T extends Item> {
   final DataProvider<T> provider;
   final ScrollJudge scrollJudge;
 
-  Data<T>? _cachedItems;
+  Data<T>? _cachedNextItems;
+  Data<T>? _cachedPreviousItems;
 
   final ValueChangeNotifier<Data<T>?> _items =
       ValueChangeNotifier<Data<T>?>(null);
@@ -129,33 +132,43 @@ class DynamicListController<T extends Item> {
   }
 
   installScrollListener(ScrollController controller) {
-    controller.addListener(() {
+    bool handling = false;
+    controller.addListener(() async {
+      if (handling) {
+        return;
+      }
+      handling = true;
       if (scrollJudge.shouldCachePrevious(controller)) {
-        _cachePreviousPage();
+        await _cachePreviousPage();
       }
       if (scrollJudge.shouldCacheNext(controller)) {
-        _cacheNextPage();
+        await _cacheNextPage();
       }
       if (scrollJudge.shouldApplyNext(controller)) {
-        _applyNextPageData();
+        await _applyNextPageData();
       }
       if (scrollJudge.shouldApplyPrevious(controller)) {
-        _applyPreviousPageData();
+        await _applyPreviousPageData();
       }
+      handling = false;
     });
   }
 
   _cachePreviousPage() async {
     if (_noMorePrevious.value ||
         _loadingPrevious.value ||
-        _cachedItems != null ||
+        _cachedPreviousItems != null ||
         _items.value == null ||
         _items.value!.length() == 0) {
       return;
     }
     _loadingPrevious.value = true;
-    _cachedItems = await provider.fetchPrevious(_items.value!.at(0)!);
-    if (_cachedItems!.length() < provider.pageSize) {
+    var firstItem = _items.value!.at(0)!;
+    if (kDebugMode) {
+      print("start cache previous from: ${firstItem.id}");
+    }
+    _cachedPreviousItems = await provider.fetchPrevious(firstItem);
+    if (_cachedPreviousItems!.length() < provider.pageSize) {
       _noMorePrevious.value = true;
     }
     _loadingPrevious.value = false;
@@ -164,39 +177,48 @@ class DynamicListController<T extends Item> {
   _cacheNextPage() async {
     if (_noMoreNext.value ||
         _loadingNext.value ||
-        _cachedItems != null ||
+        _cachedNextItems != null ||
         _items.value == null ||
         _items.value!.length() == 0) {
       return;
     }
     _loadingNext.value = true;
-    _cachedItems =
-        await provider.fetchNext(_items.value!.at(_items.value!.length() - 1)!);
-    if (_cachedItems!.length() < provider.pageSize) {
+    var lastItem = _items.value!.at(_items.value!.length() - 1)!;
+    if (kDebugMode) {
+      print("start cache next from: ${lastItem.id}");
+    }
+    _cachedNextItems = await provider.fetchNext(lastItem);
+    if (_cachedNextItems!.length() < provider.pageSize) {
       _noMoreNext.value = true;
     }
     _loadingNext.value = false;
   }
 
   _applyPreviousPageData() async {
-    if (_cachedItems == null) {
+    if (_cachedPreviousItems == null) {
       await _cachePreviousPage();
     }
-    if (_cachedItems == null) {
+    if (_cachedPreviousItems == null) {
       return;
     }
-    _items.value?.insert(_cachedItems!.all(), CrudHint.head);
-    _cachedItems = null;
+    if (kDebugMode) {
+      print("apply cached previous");
+    }
+    _items.value?.insert(_cachedPreviousItems!.all(), CrudHint.head);
+    _cachedPreviousItems = null;
   }
 
   _applyNextPageData() async {
-    if (_cachedItems == null) {
+    if (_cachedNextItems == null) {
       await _cacheNextPage();
     }
-    if (_cachedItems == null) {
+    if (_cachedNextItems == null) {
       return;
     }
-    _items.value?.insert(_cachedItems!.all(), CrudHint.tail);
-    _cachedItems = null;
+    if (kDebugMode) {
+      print("apply cached next");
+    }
+    _items.value?.insert(_cachedNextItems!.all(), CrudHint.tail);
+    _cachedNextItems = null;
   }
 }

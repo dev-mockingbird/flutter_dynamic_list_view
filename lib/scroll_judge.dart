@@ -14,25 +14,37 @@ abstract class ScrollJudge {
   shouldApplyNext(ScrollController controller);
 }
 
-class DefaultScrollJudge extends ScrollJudge {
+class PropotionScrollJudge extends ScrollJudge {
+  double cacheNextPropotion;
+  double applyNextPropotion;
+  double cachePreviousPropotion;
+  double applyPreviousPropotion;
+
+  PropotionScrollJudge({
+    this.cacheNextPropotion = 0.6,
+    this.cachePreviousPropotion = 0.4,
+    this.applyNextPropotion = 0.9,
+    this.applyPreviousPropotion = 0.1,
+  });
+
   @override
   shouldApplyNext(ScrollController controller) {
-    return propotion(controller) > 0.9;
+    return propotion(controller) > applyNextPropotion;
   }
 
   @override
   shouldApplyPrevious(ScrollController controller) {
-    return propotion(controller) < 0.1;
+    return propotion(controller) < applyPreviousPropotion;
   }
 
   @override
   shouldCacheNext(ScrollController controller) {
-    return propotion(controller) > 0.5;
+    return propotion(controller) > cacheNextPropotion;
   }
 
   @override
   shouldCachePrevious(ScrollController controller) {
-    return propotion(controller) < 0.5;
+    return propotion(controller) < cachePreviousPropotion;
   }
 
   @protected

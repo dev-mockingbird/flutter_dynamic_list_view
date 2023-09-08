@@ -12,7 +12,6 @@ class DynamicListView extends StatefulWidget {
   final DynamicListController controller;
   final AutoScrollController? scrollController;
   final ItemsBuilder itemsBuilder;
-  final SliverAppBar? header;
   final Widget? noContent;
   final double? cacheExtent;
 
@@ -33,7 +32,6 @@ class DynamicListView extends StatefulWidget {
     required this.itemsBuilder,
     required this.controller,
     this.scrollController,
-    this.header,
     this.cacheExtent,
     this.noContent,
     this.scrollDirection,
@@ -81,7 +79,6 @@ class _DynamicListViewState extends State<DynamicListView> {
   @override
   Widget build(BuildContext context) {
     var children = <Widget>[
-      if (widget.header != null) widget.header!,
       ItemWrap(
           scrollController: _scrollController,
           index: DynamicListController.topIndex,
