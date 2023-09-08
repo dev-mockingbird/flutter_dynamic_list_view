@@ -44,7 +44,9 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     controller = DynamicListController<ExampleItem>(
-        provider: ExampleDataProvider(), scrollJudge: PropotionScrollJudge());
+        disableCenter: true,
+        provider: ExampleDataProvider(),
+        scrollJudge: PropotionScrollJudge());
     controller.loadingNext.addListener(() {
       setState(() {
         _loading = controller.loadingNext.value;
@@ -73,7 +75,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   _randScroll() {
-    var all = controller.items.value?.all() ?? [];
+    var all = controller.items.all();
     int index = Random().nextInt(all.length);
     Item item = all[index];
     print("index: $index, item: ${item.id}");
@@ -87,23 +89,26 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(widget.title),
-          actions: [
-            TextButton(onPressed: _randScroll, child: const Text("TO RAND")),
-            TextButton(onPressed: _scrollToTop, child: const Text("TO TOP")),
-            TextButton(
-                onPressed: _scrollToBottom, child: const Text("TO BOTTOM")),
-          ],
-          elevation: 8,
-          // floating: true,
-          bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(2),
-              child: SizedBox(
-                  height: 2,
-                  child: _loading ? const LinearProgressIndicator() : null)),
-        ),
         body: DynamicListView(
+            header: SliverAppBar(
+              title: Text(widget.title),
+              actions: [
+                TextButton(
+                    onPressed: _randScroll, child: const Text("TO RAND")),
+                TextButton(
+                    onPressed: _scrollToTop, child: const Text("TO TOP")),
+                TextButton(
+                    onPressed: _scrollToBottom, child: const Text("TO BOTTOM")),
+              ],
+              elevation: 8,
+              floating: true,
+              bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(2),
+                  child: SizedBox(
+                      height: 2,
+                      child:
+                          _loading ? const LinearProgressIndicator() : null)),
+            ),
             scrollController: _scrollController,
             itemsBuilder: (List<Item> data) {
               List<Widget> children = [];

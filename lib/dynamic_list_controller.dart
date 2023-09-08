@@ -28,19 +28,73 @@ class ValueChangeNotifier<T> extends ChangeNotifier {
   }
 }
 
+class DataChangeNotifier<T extends Item> extends ChangeNotifier
+    implements Data<T> {
+  Data<T>? _value;
+
+  @override
+  insert(List<T> data, CrudHint insertHint) {
+    _value?.insert(data, insertHint);
+    notifyListeners();
+  }
+
+  @override
+  removeAt(int index) {
+    _value?.removeAt(index);
+    notifyListeners();
+  }
+
+  @override
+  remove(T item) {
+    _value?.remove(item);
+    notifyListeners();
+  }
+
+  @override
+  update(T item) {
+    _value?.update(item);
+    notifyListeners();
+  }
+
+  @override
+  List<T> all() {
+    return _value?.all() ?? [];
+  }
+
+  @override
+  T? at(int idx) {
+    return _value?.at(idx);
+  }
+
+  @override
+  int indexOf(Item item) {
+    return _value?.indexOf(item) ?? -1;
+  }
+
+  @override
+  int length() {
+    return _value?.length() ?? 0;
+  }
+
+  set value(Data<T>? value) {
+    _value = value;
+    notifyListeners();
+  }
+}
+
 class DynamicListController<T extends Item> {
   static const int topIndex = 10000000;
   static const int bottomIndex = 10000001;
-  final double topHeight;
-  final double bottomHeight;
+  final bool disableCenter;
+  final ValueChangeNotifier<double> topHeight = ValueChangeNotifier(0.0);
+  final ValueChangeNotifier<double> bottomHeight = ValueChangeNotifier(0.0);
   final DataProvider<T> provider;
   final ScrollJudge scrollJudge;
 
   Data<T>? _cachedNextItems;
   Data<T>? _cachedPreviousItems;
 
-  final ValueChangeNotifier<Data<T>?> _items =
-      ValueChangeNotifier<Data<T>?>(null);
+  final DataChangeNotifier<T> _items = DataChangeNotifier();
   final ValueChangeNotifier<bool> _noMoreNext =
       ValueChangeNotifier<bool>(false);
   final ValueChangeNotifier<bool> _noMorePrevious =
@@ -54,8 +108,7 @@ class DynamicListController<T extends Item> {
   DynamicListController({
     required this.provider,
     required this.scrollJudge,
-    this.topHeight = 0,
-    this.bottomHeight = 0,
+    this.disableCenter = false,
     Data<T>? items,
   }) {
     if (items != null) {
@@ -96,16 +149,10 @@ class DynamicListController<T extends Item> {
   scrollToItem(AutoScrollController scrollController, Item item,
       {Duration? duration,
       AutoScrollPosition preferPosition = AutoScrollPosition.middle}) {
-    Data<T>? items = _items.value;
-    if (items == null) {
-      return;
-    }
-    int index = items.indexOf(item);
+    int index = _items.indexOf(item);
     double offset = 0;
     if (preferPosition == AutoScrollPosition.begin) {
-      offset -= topHeight;
-    } else if (preferPosition == AutoScrollPosition.end) {
-      offset += bottomHeight;
+      offset -= topHeight.value;
     }
     if (index > -1) {
       scrollController.scrollToIndex(index,
@@ -115,23 +162,23 @@ class DynamicListController<T extends Item> {
     }
   }
 
-  ValueChangeNotifier<Data<T>?> get items {
+  DataChangeNotifier<T> get items {
     return _items;
   }
 
   insert(List<T> items, CrudHint hint) {
-    _items.value?.insert(items, hint);
+    _items.insert(items, hint);
   }
 
   remove(T item) {
-    _items.value?.remove(item);
+    _items.remove(item);
   }
 
   update(T item) {
-    _items.value?.update(item);
+    _items.update(item);
   }
 
-  installScrollListener(ScrollController controller) {
+  installScrollListener(AutoScrollController controller) {
     bool handling = false;
     controller.addListener(() async {
       if (handling) {
@@ -144,11 +191,12 @@ class DynamicListController<T extends Item> {
       if (scrollJudge.shouldCacheNext(controller)) {
         await _cacheNextPage();
       }
-      if (scrollJudge.shouldApplyNext(controller)) {
-        await _applyNextPageData();
+      if (disableCenter && controller.offset == 0 ||
+          !disableCenter && scrollJudge.shouldApplyPrevious(controller)) {
+        await _applyPreviousPageData(controller);
       }
-      if (scrollJudge.shouldApplyPrevious(controller)) {
-        await _applyPreviousPageData();
+      if (scrollJudge.shouldApplyNext(controller)) {
+        await _applyNextPageData(controller);
       }
       handling = false;
     });
@@ -158,19 +206,15 @@ class DynamicListController<T extends Item> {
     if (_noMorePrevious.value ||
         _loadingPrevious.value ||
         _cachedPreviousItems != null ||
-        _items.value == null ||
-        _items.value!.length() == 0) {
+        _items.length() == 0) {
       return;
     }
     _loadingPrevious.value = true;
-    var firstItem = _items.value!.at(0)!;
+    var firstItem = _items.at(0)!;
     if (kDebugMode) {
       print("start cache previous from: ${firstItem.id}");
     }
     _cachedPreviousItems = await provider.fetchPrevious(firstItem);
-    if (_cachedPreviousItems!.length() < provider.pageSize) {
-      _noMorePrevious.value = true;
-    }
     _loadingPrevious.value = false;
   }
 
@@ -178,23 +222,19 @@ class DynamicListController<T extends Item> {
     if (_noMoreNext.value ||
         _loadingNext.value ||
         _cachedNextItems != null ||
-        _items.value == null ||
-        _items.value!.length() == 0) {
+        _items.length() == 0) {
       return;
     }
     _loadingNext.value = true;
-    var lastItem = _items.value!.at(_items.value!.length() - 1)!;
+    var lastItem = _items.at(_items.length() - 1)!;
     if (kDebugMode) {
       print("start cache next from: ${lastItem.id}");
     }
     _cachedNextItems = await provider.fetchNext(lastItem);
-    if (_cachedNextItems!.length() < provider.pageSize) {
-      _noMoreNext.value = true;
-    }
     _loadingNext.value = false;
   }
 
-  _applyPreviousPageData() async {
+  _applyPreviousPageData(AutoScrollController controller) async {
     if (_cachedPreviousItems == null) {
       await _cachePreviousPage();
     }
@@ -204,11 +244,19 @@ class DynamicListController<T extends Item> {
     if (kDebugMode) {
       print("apply cached previous");
     }
-    _items.value?.insert(_cachedPreviousItems!.all(), CrudHint.head);
+    if (disableCenter) {
+      Item item = _items.at(0)!;
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        scrollToItem(controller, item,
+            preferPosition: AutoScrollPosition.begin);
+      });
+    }
+    _items.insert(_cachedPreviousItems!.all(), CrudHint.head);
+    _noMorePrevious.value = !provider.hasMorePrevious(_items.at(0) as T);
     _cachedPreviousItems = null;
   }
 
-  _applyNextPageData() async {
+  _applyNextPageData(AutoScrollController controller) async {
     if (_cachedNextItems == null) {
       await _cacheNextPage();
     }
@@ -218,7 +266,15 @@ class DynamicListController<T extends Item> {
     if (kDebugMode) {
       print("apply cached next");
     }
-    _items.value?.insert(_cachedNextItems!.all(), CrudHint.tail);
+    if (disableCenter) {
+      Item item = _items.all()[_items.length() - 1];
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        scrollToItem(controller, item, preferPosition: AutoScrollPosition.end);
+      });
+    }
+    _items.insert(_cachedNextItems!.all(), CrudHint.tail);
+    _noMoreNext.value =
+        !provider.hasMorePrevious(_items.at(_items.length() - 1) as T);
     _cachedNextItems = null;
   }
 }

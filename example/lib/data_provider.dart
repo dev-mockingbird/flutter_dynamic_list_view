@@ -3,6 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dynamic_list_view/data_provider.dart';
 
 class ExampleItem extends Item {
@@ -31,6 +32,19 @@ class ExampleDataProvider extends DataProvider<ExampleItem> {
 
   Future<ExampleData> fetchLatest() async {
     return _fetch(total - pageSize);
+  }
+
+  @override
+  bool hasMoreNext(ExampleItem lastQueriedItem) {
+    return int.parse(lastQueriedItem.id) < 999;
+  }
+
+  @override
+  bool hasMorePrevious(ExampleItem lastQueriedItem) {
+    if (kDebugMode) {
+      print("hasMorePrevious: lastQueriedItem: ${lastQueriedItem.id}");
+    }
+    return int.parse(lastQueriedItem.id) > 0;
   }
 
   @override

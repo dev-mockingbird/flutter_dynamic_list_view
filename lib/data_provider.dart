@@ -12,6 +12,8 @@ abstract class Item {
 abstract class DataProvider<T extends Item> {
   Future<Data<T>> fetchPrevious(Item firstItem);
   Future<Data<T>> fetchNext(Item lastItem);
+  bool hasMoreNext(T lastQueriedItem);
+  bool hasMorePrevious(T lastQueriedItem);
   Future<Data<T>> fetch();
   int get pageSize;
 }

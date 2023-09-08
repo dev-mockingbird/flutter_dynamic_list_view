@@ -13,6 +13,7 @@ class DynamicListView extends StatefulWidget {
   final AutoScrollController? scrollController;
   final ItemsBuilder itemsBuilder;
   final Widget? noContent;
+  final Widget? header;
   final double? cacheExtent;
 
   final Axis? scrollDirection;
@@ -36,6 +37,7 @@ class DynamicListView extends StatefulWidget {
     this.noContent,
     this.scrollDirection,
     this.reverse,
+    this.header,
     this.primary,
     this.scrollBehavior,
     this.shrinkWrap,
@@ -53,7 +55,6 @@ class DynamicListView extends StatefulWidget {
 class _DynamicListViewState extends State<DynamicListView> {
   late AutoScrollController _scrollController;
   final GlobalKey _centerKey = GlobalKey();
-
   @override
   void initState() {
     _scrollController = widget.scrollController ?? AutoScrollController();
@@ -79,28 +80,31 @@ class _DynamicListViewState extends State<DynamicListView> {
   @override
   Widget build(BuildContext context) {
     var children = <Widget>[
+      if (widget.header != null) widget.header!,
       ItemWrap(
           scrollController: _scrollController,
           index: DynamicListController.topIndex,
-          child: SizedBox(height: widget.controller.topHeight))
+          child: SizedBox(height: widget.controller.topHeight.value))
     ];
-    List<Item> data = widget.controller.items.value?.all() ?? [];
+    List<Item> data = widget.controller.items.all();
     if (data.isEmpty && widget.noContent != null) {
       children.add(SliverToBoxAdapter(child: widget.noContent));
     }
     List<Widget> items = widget.itemsBuilder(data);
-    items.insert(
-        items.length ~/ 2,
-        ItemWrap(
-            scrollController: widget.scrollController,
-            index: 100000000,
-            child: Container(),
-            key: _centerKey));
+    if (!widget.controller.disableCenter) {
+      items.insert(
+          items.length ~/ 2,
+          ItemWrap(
+              scrollController: widget.scrollController,
+              index: 100000000,
+              child: Container(),
+              key: _centerKey));
+    }
     children.addAll(items);
     children.add(ItemWrap(
       scrollController: _scrollController,
       index: DynamicListController.bottomIndex,
-      child: SizedBox(height: widget.controller.bottomHeight),
+      child: SizedBox(height: widget.controller.bottomHeight.value),
     ));
     return CustomScrollView(
       cacheExtent: widget.cacheExtent,
@@ -115,7 +119,8 @@ class _DynamicListViewState extends State<DynamicListView> {
           ScrollViewKeyboardDismissBehavior.manual,
       restorationId: widget.restorationId,
       clipBehavior: widget.clipBehavior ?? Clip.hardEdge,
-      center: _centerKey,
+      center: widget.controller.disableCenter ? null : _centerKey,
+      anchor: widget.controller.disableCenter ? 0.0 : 0.5,
       controller: _scrollController,
       slivers: children,
     );
