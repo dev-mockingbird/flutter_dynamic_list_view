@@ -115,8 +115,20 @@ class DynamicListController<T extends Item> {
       _items.value = items;
       return;
     }
+    _loadingNext.value = true;
+    _loadingPrevious.value = true;
     provider.fetch().then((value) {
+      _loadingNext.value = false;
+      _loadingPrevious.value = false;
       _items.value = value;
+      if (_items.length() == 0) {
+        _noMoreNext.value = true;
+        _noMorePrevious.value = true;
+        return;
+      }
+      _noMoreNext.value =
+          !provider.hasMoreNext(_items.at(_items.length() - 1)!);
+      _noMorePrevious.value = !provider.hasMoreNext(_items.at(0)!);
     });
   }
 

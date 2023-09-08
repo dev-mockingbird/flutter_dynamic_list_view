@@ -28,7 +28,7 @@ class DynamicListView extends StatefulWidget {
   final String? restorationId;
   final Clip? clipBehavior;
 
-  const DynamicListView({
+  DynamicListView({
     super.key,
     required this.itemsBuilder,
     required this.controller,
@@ -46,7 +46,11 @@ class DynamicListView extends StatefulWidget {
     this.keyboardDismissBehavior,
     this.restorationId,
     this.clipBehavior,
-  });
+  }) {
+    // cant't enable center with header
+    // https://github.com/flutter/flutter/issues/39715
+    assert(!(!controller.disableCenter && header != null));
+  }
 
   @override
   State<DynamicListView> createState() => _DynamicListViewState();
