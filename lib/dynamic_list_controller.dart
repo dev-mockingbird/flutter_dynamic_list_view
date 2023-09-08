@@ -274,7 +274,7 @@ class DynamicListController<T extends Item> {
     }
     _items.insert(_cachedNextItems!.all(), CrudHint.tail);
     _noMoreNext.value =
-        !provider.hasMorePrevious(_items.at(_items.length() - 1) as T);
+        !provider.hasMoreNext(_items.at(_items.length() - 1) as T);
     _cachedNextItems = null;
   }
 }

@@ -86,6 +86,14 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  _changeBottomHeight() {
+    controller.bottomHeight.value = Random().nextDouble() * 256;
+  }
+
+  _changeTopHeight() {
+    controller.topHeight.value = Random().nextDouble() * 256;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -94,6 +102,12 @@ class _MyHomePageState extends State<MyHomePage> {
               title: Text(widget.title),
               actions: [
                 TextButton(
+                    onPressed: _changeBottomHeight,
+                    child: const Text("BOTTOM HEIGHT")),
+                TextButton(
+                    onPressed: _changeTopHeight,
+                    child: const Text("TOP HEIGHT")),
+                TextButton(
                     onPressed: _randScroll, child: const Text("TO RAND")),
                 TextButton(
                     onPressed: _scrollToTop, child: const Text("TO TOP")),
@@ -101,7 +115,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: _scrollToBottom, child: const Text("TO BOTTOM")),
               ],
               elevation: 8,
-              floating: true,
+              // floating: true,
+              pinned: true,
               bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(2),
                   child: SizedBox(

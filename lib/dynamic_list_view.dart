@@ -60,6 +60,8 @@ class _DynamicListViewState extends State<DynamicListView> {
     _scrollController = widget.scrollController ?? AutoScrollController();
     widget.controller.installScrollListener(_scrollController);
     widget.controller.items.addListener(_updateUI);
+    widget.controller.bottomHeight.addListener(_updateUI);
+    widget.controller.topHeight.addListener(_updateUI);
     super.initState();
   }
 
@@ -68,6 +70,9 @@ class _DynamicListViewState extends State<DynamicListView> {
     if (widget.scrollController == null) {
       _scrollController.dispose();
     }
+    widget.controller.items.removeListener(_updateUI);
+    widget.controller.bottomHeight.removeListener(_updateUI);
+    widget.controller.topHeight.removeListener(_updateUI);
     super.dispose();
   }
 
