@@ -57,6 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
         _loading = controller.loadingPrevious.value;
       });
     });
+    controller.initItems(minimumWait: const Duration(seconds: 10));
     super.initState();
   }
 

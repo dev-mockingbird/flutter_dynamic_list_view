@@ -115,21 +115,41 @@ class DynamicListController<T extends Item> {
       _items.value = items;
       return;
     }
+  }
+
+  initItems({Duration? minimumWait}) async {
     _loadingNext.value = true;
     _loadingPrevious.value = true;
-    provider.fetch().then((value) {
+    fetchDone() {
       _loadingNext.value = false;
       _loadingPrevious.value = false;
-      _items.value = value;
       if (_items.length() == 0) {
         _noMoreNext.value = true;
         _noMorePrevious.value = true;
         return;
       }
-      _noMoreNext.value =
-          !provider.hasMoreNext(_items.at(_items.length() - 1)!);
-      _noMorePrevious.value = !provider.hasMoreNext(_items.at(0)!);
-    });
+      _noMoreNext.value = !provider.hasMoreNext(
+        _items.at(_items.length() - 1)!,
+      );
+      _noMorePrevious.value = !provider.hasMorePrevious(_items.at(0)!);
+    }
+
+    if (minimumWait == null) {
+      _items.value = await provider.fetch();
+      fetchDone();
+      return;
+    }
+    Data<T>? items;
+    doInitItems() async {
+      items = await provider.fetch();
+    }
+
+    await Future.wait([
+      doInitItems(),
+      Future.delayed(minimumWait),
+    ]);
+    _items.value = items;
+    fetchDone();
   }
 
   ValueChangeNotifier<bool> get loadingNext {
@@ -149,13 +169,19 @@ class DynamicListController<T extends Item> {
   }
 
   scrollToTop(AutoScrollController scrollController, {Duration? duration}) {
-    scrollController.scrollToIndex(topIndex,
-        preferPosition: AutoScrollPosition.begin, duration: duration);
+    scrollController.scrollToIndex(
+      topIndex,
+      preferPosition: AutoScrollPosition.begin,
+      duration: duration,
+    );
   }
 
   scrollToBottom(AutoScrollController scrollController, {Duration? duration}) {
-    scrollController.scrollToIndex(bottomIndex,
-        preferPosition: AutoScrollPosition.end, duration: duration);
+    scrollController.scrollToIndex(
+      bottomIndex,
+      preferPosition: AutoScrollPosition.end,
+      duration: duration,
+    );
   }
 
   scrollToItem(AutoScrollController scrollController, Item item,
