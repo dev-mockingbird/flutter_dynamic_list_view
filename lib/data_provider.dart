@@ -25,6 +25,8 @@ abstract class Data<T extends Item> {
   removeAt(int index);
   remove(T item);
   update(T item);
+  clear();
+  Data<T>? copy();
   List<T> all();
   T? at(int idx);
   int indexOf(Item item);
@@ -32,7 +34,14 @@ abstract class Data<T extends Item> {
 }
 
 abstract class ListData<T extends Item> extends Data<T> {
-  List<T> _items = [];
+  List<T> _items;
+
+  ListData({List<T>? items}) : _items = items ?? [];
+
+  @override
+  clear() {
+    _items.clear();
+  }
 
   @override
   insert(List<T> data, CrudHint insertHint) {

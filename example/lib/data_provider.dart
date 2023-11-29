@@ -17,7 +17,13 @@ class ExampleItem extends Item {
   }
 }
 
-class ExampleData extends ListData<ExampleItem> {}
+class ExampleData extends ListData<ExampleItem> {
+  ExampleData({super.items});
+  @override
+  Data<ExampleItem>? copy() {
+    return ExampleData(items: all());
+  }
+}
 
 class ExampleDataProvider extends DataProvider<ExampleItem> {
   static const int total = 1000;

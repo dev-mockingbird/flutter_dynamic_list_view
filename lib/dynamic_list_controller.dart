@@ -51,6 +51,12 @@ class DataChangeNotifier<T extends Item> extends ChangeNotifier
   }
 
   @override
+  clear() {
+    _value?.clear();
+    notifyListeners();
+  }
+
+  @override
   update(T item) {
     _value?.update(item);
     notifyListeners();
@@ -79,6 +85,18 @@ class DataChangeNotifier<T extends Item> extends ChangeNotifier
   set value(Data<T>? value) {
     _value = value;
     notifyListeners();
+  }
+
+  Data<T>? get value {
+    return _value;
+  }
+
+  @override
+  Data<T>? copy() {
+    if (_value == null) {
+      return null;
+    }
+    return _value!.copy();
   }
 }
 
@@ -118,6 +136,15 @@ class DynamicListController<T extends Item> {
   }
 
   initItems({Duration? minimumWait}) async {
+    if (_items.length() != 0) {
+      if (minimumWait != null) {
+        var items = _items.copy();
+        _items.clear();
+        await Future.delayed(minimumWait);
+        _items.value = items;
+      }
+      return;
+    }
     _loadingNext.value = true;
     _loadingPrevious.value = true;
     fetchDone() {
