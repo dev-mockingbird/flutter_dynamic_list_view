@@ -21,6 +21,7 @@ class DynamicListView extends StatefulWidget {
   final bool? primary;
   final ScrollBehavior? scrollBehavior;
   final bool? shrinkWrap;
+  final Function(double contentHeight)? onContentHeightChanged;
 
   final int? semanticChildCount;
   final DragStartBehavior? dragStartBehavior;
@@ -48,6 +49,7 @@ class DynamicListView extends StatefulWidget {
     this.restorationId,
     this.clipBehavior,
     this.minHeight,
+    this.onContentHeightChanged,
   }) {
     // cant't enable center with header
     // https://github.com/flutter/flutter/issues/39715
@@ -154,13 +156,17 @@ class _DynamicListViewState extends State<DynamicListView> {
     }
     var height = _scrollController.position.maxScrollExtent -
         _scrollController.position.minScrollExtent;
-    if (height < (widget.minHeight ?? 0)) {
+
+    if (widget.onContentHeightChanged != null) {
+      widget.onContentHeightChanged!(height - _bottomHeight);
+    }
+    var bottomHeight = widget.minHeight! - (height - _bottomHeight);
+    if (bottomHeight < 0) {
+      bottomHeight = 0;
+    }
+    if (bottomHeight != _bottomHeight) {
       setState(() {
-        _bottomHeight = widget.minHeight! - height;
-      });
-    } else if (_bottomHeight > 0) {
-      setState(() {
-        _bottomHeight = 0;
+        _bottomHeight = bottomHeight;
       });
     }
   }
