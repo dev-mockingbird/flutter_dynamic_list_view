@@ -44,9 +44,10 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     controller = DynamicListController<ExampleItem>(
-        disableCenter: true,
-        provider: ExampleDataProvider(),
-        scrollJudge: PropotionScrollJudge());
+      disableCenter: true,
+      provider: ExampleDataProvider(),
+      scrollJudge: PropotionScrollJudge(),
+    );
     controller.loadingNext.addListener(() {
       setState(() {
         _loading = controller.loadingNext.value;
@@ -99,6 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
         body: DynamicListView(
+            minHeight: 1000,
             header: SliverAppBar(
               title: Text(widget.title),
               actions: [

@@ -69,7 +69,6 @@ class _DynamicListViewState extends State<DynamicListView> {
     widget.controller.items.addListener(_updateUI);
     widget.controller.bottomHeight.addListener(_updateUI);
     widget.controller.topHeight.addListener(_updateUI);
-    _bottomHeight = widget.controller.bottomHeight.value;
     super.initState();
   }
 
@@ -119,10 +118,15 @@ class _DynamicListViewState extends State<DynamicListView> {
       );
     }
     children.addAll(items);
+    if (_bottomHeight > 0.0) {
+      children.add(SliverToBoxAdapter(child: SizedBox(height: _bottomHeight)));
+    }
     children.add(ItemWrap(
       scrollController: _scrollController,
       index: DynamicListController.bottomIndex,
-      child: SizedBox(height: _bottomHeight),
+      child: SizedBox(
+        height: widget.controller.bottomHeight.value,
+      ),
     ));
     return CustomScrollView(
       cacheExtent: widget.cacheExtent,
@@ -153,6 +157,10 @@ class _DynamicListViewState extends State<DynamicListView> {
     if (height < (widget.minHeight ?? 0)) {
       setState(() {
         _bottomHeight = widget.minHeight! - height;
+      });
+    } else if (_bottomHeight > 0) {
+      setState(() {
+        _bottomHeight = 0;
       });
     }
   }
