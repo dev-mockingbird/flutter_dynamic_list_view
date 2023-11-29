@@ -157,7 +157,7 @@ class _DynamicListViewState extends State<DynamicListView> {
     var height = _scrollController.position.maxScrollExtent -
         _scrollController.position.minScrollExtent;
 
-    if (widget.onContentHeightChanged != null) {
+    if (widget.onContentHeightChanged != null && height - _bottomHeight >= 0) {
       widget.onContentHeightChanged!(height - _bottomHeight);
     }
     var bottomHeight = widget.minHeight! - (height - _bottomHeight);

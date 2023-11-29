@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dynamic_list_view/data_provider.dart';
 import 'package:flutter_dynamic_list_view/dynamic_list_controller.dart';
 import 'package:flutter_dynamic_list_view/dynamic_list_view.dart';
@@ -101,6 +102,11 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
         body: DynamicListView(
             minHeight: 1000,
+            onContentHeightChanged: (contentHeight) {
+              if (kDebugMode) {
+                print("content height: $contentHeight");
+              }
+            },
             header: SliverAppBar(
               title: Text(widget.title),
               actions: [
