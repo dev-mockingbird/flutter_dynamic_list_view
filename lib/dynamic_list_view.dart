@@ -27,6 +27,7 @@ class DynamicListView extends StatefulWidget {
   final ScrollViewKeyboardDismissBehavior? keyboardDismissBehavior;
   final String? restorationId;
   final Clip? clipBehavior;
+  final double? minHeight;
 
   DynamicListView({
     super.key,
@@ -46,6 +47,7 @@ class DynamicListView extends StatefulWidget {
     this.keyboardDismissBehavior,
     this.restorationId,
     this.clipBehavior,
+    this.minHeight,
   }) {
     // cant't enable center with header
     // https://github.com/flutter/flutter/issues/39715
@@ -59,6 +61,7 @@ class DynamicListView extends StatefulWidget {
 class _DynamicListViewState extends State<DynamicListView> {
   late AutoScrollController _scrollController;
   final GlobalKey _centerKey = GlobalKey();
+  double _bottomHeight = 0;
   @override
   void initState() {
     _scrollController = widget.scrollController ?? AutoScrollController();
@@ -66,6 +69,7 @@ class _DynamicListViewState extends State<DynamicListView> {
     widget.controller.items.addListener(_updateUI);
     widget.controller.bottomHeight.addListener(_updateUI);
     widget.controller.topHeight.addListener(_updateUI);
+    _bottomHeight = widget.controller.bottomHeight.value;
     super.initState();
   }
 
@@ -88,6 +92,9 @@ class _DynamicListViewState extends State<DynamicListView> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      _resetBottomHeight();
+    });
     var children = <Widget>[
       if (widget.header != null) widget.header!,
       ItemWrap(
@@ -102,18 +109,20 @@ class _DynamicListViewState extends State<DynamicListView> {
     List<Widget> items = widget.itemsBuilder(data);
     if (!widget.controller.disableCenter) {
       items.insert(
-          items.length ~/ 2,
-          ItemWrap(
-              scrollController: widget.scrollController,
-              index: 100000000,
-              child: Container(),
-              key: _centerKey));
+        items.length ~/ 2,
+        ItemWrap(
+          scrollController: widget.scrollController,
+          index: 100000000,
+          child: Container(),
+          key: _centerKey,
+        ),
+      );
     }
     children.addAll(items);
     children.add(ItemWrap(
       scrollController: _scrollController,
       index: DynamicListController.bottomIndex,
-      child: SizedBox(height: widget.controller.bottomHeight.value),
+      child: SizedBox(height: _bottomHeight),
     ));
     return CustomScrollView(
       cacheExtent: widget.cacheExtent,
@@ -134,6 +143,19 @@ class _DynamicListViewState extends State<DynamicListView> {
       slivers: children,
     );
   }
+
+  _resetBottomHeight() {
+    if (widget.minHeight == 0) {
+      return;
+    }
+    var height = _scrollController.position.maxScrollExtent -
+        _scrollController.position.minScrollExtent;
+    if (height < (widget.minHeight ?? 0)) {
+      setState(() {
+        _bottomHeight = widget.minHeight! - height;
+      });
+    }
+  }
 }
 
 SliverToBoxAdapter ItemWrap(
@@ -142,10 +164,12 @@ SliverToBoxAdapter ItemWrap(
     required Widget child,
     GlobalKey? key}) {
   return SliverToBoxAdapter(
-      key: key,
-      child: AutoScrollTag(
-          key: ValueKey(index),
-          controller: scrollController,
-          index: index,
-          child: child));
+    key: key,
+    child: AutoScrollTag(
+      key: ValueKey(index),
+      controller: scrollController,
+      index: index,
+      child: child,
+    ),
+  );
 }
